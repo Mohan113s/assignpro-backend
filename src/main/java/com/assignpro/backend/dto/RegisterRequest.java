@@ -2,8 +2,12 @@ package com.assignpro.backend.dto;
 
 public class RegisterRequest {
 
+    @com.fasterxml.jackson.annotation.JsonAlias({ "name", "fullName" })
     private String fullName;
+
+    @com.fasterxml.jackson.annotation.JsonAlias({ "phone", "mobile" })
     private String mobile;
+
     private String email;
     private String password;
     private String role;

@@ -3,18 +3,28 @@ package com.assignpro.backend.dto;
 public class LeadImportResponse {
 
     private int totalRecords;
-    private int successRecords;
-    private int failedRecords;
+    private int imported;
+    private int duplicates;
+    private int failed;
+    private int invalid;
     private String message;
 
     public LeadImportResponse() {
     }
 
-    public LeadImportResponse(int totalRecords, int successRecords,
-                              int failedRecords, String message) {
+    public LeadImportResponse(int totalRecords, int imported, int duplicates, String message) {
         this.totalRecords = totalRecords;
-        this.successRecords = successRecords;
-        this.failedRecords = failedRecords;
+        this.imported = imported;
+        this.duplicates = duplicates;
+        this.message = message;
+    }
+
+    public LeadImportResponse(int totalRecords, int imported, int duplicates, int failed, int invalid, String message) {
+        this.totalRecords = totalRecords;
+        this.imported = imported;
+        this.duplicates = duplicates;
+        this.failed = failed;
+        this.invalid = invalid;
         this.message = message;
     }
 
@@ -26,20 +36,36 @@ public class LeadImportResponse {
         this.totalRecords = totalRecords;
     }
 
-    public int getSuccessRecords() {
-        return successRecords;
+    public int getImported() {
+        return imported;
     }
 
-    public void setSuccessRecords(int successRecords) {
-        this.successRecords = successRecords;
+    public void setImported(int imported) {
+        this.imported = imported;
     }
 
-    public int getFailedRecords() {
-        return failedRecords;
+    public int getDuplicates() {
+        return duplicates;
     }
 
-    public void setFailedRecords(int failedRecords) {
-        this.failedRecords = failedRecords;
+    public void setDuplicates(int duplicates) {
+        this.duplicates = duplicates;
+    }
+
+    public int getFailed() {
+        return failed;
+    }
+
+    public void setFailed(int failed) {
+        this.failed = failed;
+    }
+
+    public int getInvalid() {
+        return invalid;
+    }
+
+    public void setInvalid(int invalid) {
+        this.invalid = invalid;
     }
 
     public String getMessage() {

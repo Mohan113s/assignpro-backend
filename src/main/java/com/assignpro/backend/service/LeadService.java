@@ -24,7 +24,7 @@ public class LeadService {
     private final UserRepository userRepository;
 
     public LeadService(LeadRepository leadRepository,
-                       UserRepository userRepository) {
+            UserRepository userRepository) {
 
         this.leadRepository = leadRepository;
         this.userRepository = userRepository;
@@ -50,8 +50,7 @@ public class LeadService {
     public Lead getLeadById(Long id) {
 
         return leadRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Lead not found"));
+                .orElseThrow(() -> new RuntimeException("Lead not found"));
     }
 
     // ==========================
@@ -62,6 +61,13 @@ public class LeadService {
     }
 
     // ==========================
+    // DELETE ALL LEADS
+    // ==========================
+    public void deleteAllLeads() {
+        leadRepository.deleteAll();
+    }
+
+    // ==========================
     // ASSIGN SINGLE LEAD
     // ==========================
     public Lead assignLead(Long leadId, Long userId) {
@@ -69,8 +75,7 @@ public class LeadService {
         Lead lead = getLeadById(leadId);
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         lead.setAssignedUser(user);
 
@@ -83,8 +88,7 @@ public class LeadService {
     public List<Lead> getMyLeads(Long userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         return leadRepository.findByAssignedUser(user);
     }
@@ -123,8 +127,7 @@ public class LeadService {
     public String bulkAssignLeads(BulkAssignRequest request) {
 
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<Lead> leads = leadRepository.findAllById(request.getLeadIds());
 
@@ -156,14 +159,11 @@ public class LeadService {
         for (UserLeadCountRequest assignment : request.getAssignments()) {
 
             User user = userRepository.findById(assignment.getUserId())
-                    .orElseThrow(() ->
-                            new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
             int count = assignment.getLeadCount();
 
-            for (int i = 0;
-                 i < count && currentIndex < unassignedLeads.size();
-                 i++) {
+            for (int i = 0; i < count && currentIndex < unassignedLeads.size(); i++) {
 
                 Lead lead = unassignedLeads.get(currentIndex);
 
@@ -177,68 +177,63 @@ public class LeadService {
 
         return "Successfully assigned " + currentIndex + " leads.";
     }
-    
- // ==========================
- // SEARCH BY NAME
- // ==========================
- public List<Lead> searchByName(String name) {
-     return leadRepository.findByNameContainingIgnoreCase(name);
- }
-
- // ==========================
- // SEARCH BY MOBILE
- // ==========================
- public List<Lead> searchByMobile(String mobile) {
-     return leadRepository.findByMobileContaining(mobile);
- }
-
- // ==========================
- // SEARCH BY COMPANY
- // ==========================
- public List<Lead> searchByCompany(String company) {
-     return leadRepository.findByCompanyContainingIgnoreCase(company);
- }
-
- // ==========================
- // SEARCH BY CITY
- // ==========================
- public List<Lead> searchByCity(String city) {
-     return leadRepository.findByCityContainingIgnoreCase(city);
- }
-
- // ==========================
- // FILTER BY STATUS
- // ==========================
- public List<Lead> getLeadsByStatus(LeadStatus status) {
-     return leadRepository.findByStatus(status);
- }
 
     // ==========================
-    // IMPORT EXCEL
+    // SEARCH BY NAME
+    // ==========================
+    public List<Lead> searchByName(String name) {
+        return leadRepository.findByNameContainingIgnoreCase(name);
+    }
+
+    // ==========================
+    // SEARCH BY MOBILE
+    // ==========================
+    public List<Lead> searchByMobile(String mobile) {
+        return leadRepository.findByMobileContaining(mobile);
+    }
+
+    // ==========================
+    // SEARCH BY COMPANY
+    // ==========================
+    public List<Lead> searchByCompany(String company) {
+        return leadRepository.findByCompanyContainingIgnoreCase(company);
+    }
+
+    // ==========================
+    // SEARCH BY CITY
+    // ==========================
+    public List<Lead> searchByCity(String city) {
+        return leadRepository.findByCityContainingIgnoreCase(city);
+    }
+
+    // ==========================
+    // FILTER BY STATUS
+    // ==========================
+    public List<Lead> getLeadsByStatus(LeadStatus status) {
+        return leadRepository.findByStatus(status);
+    }
+
+    // ==========================
+    // IMPORT EXCEL/CSV
     // ==========================
     public LeadImportResponse importExcel(MultipartFile file) {
 
-        if (!ExcelHelper.hasExcelFormat(file)) {
-
+        if (!ExcelHelper.hasValidFormat(file)) {
             return new LeadImportResponse(
-                    0,
-                    0,
-                    0,
-                    "Please upload a valid Excel (.xlsx) file");
+                    0, 0, 0,
+                    "Please upload a valid CSV, XLS, or XLSX file");
         }
 
         try {
-
-            List<Lead> leads =
-                    ExcelHelper.excelToLeads(file.getInputStream());
+            List<Lead> leads = ExcelHelper.fileToLeads(file);
 
             int total = leads.size();
             int imported = 0;
             int skipped = 0;
 
             for (Lead lead : leads) {
-
-                if (leadRepository.existsByMobile(lead.getMobile())) {
+                // Duplicate Mobile Validation
+                if (lead.getMobile() != null && leadRepository.existsByMobile(lead.getMobile())) {
                     skipped++;
                     continue;
                 }
@@ -251,12 +246,10 @@ public class LeadService {
                     total,
                     imported,
                     skipped,
-                    "Excel Imported Successfully");
+                    "File Imported Successfully");
 
-        } catch (IOException e) {
-
-            throw new RuntimeException(
-                    "Could not import Excel file", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not import file", e);
         }
     }
 }

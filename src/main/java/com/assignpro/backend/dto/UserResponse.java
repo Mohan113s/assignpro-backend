@@ -3,19 +3,26 @@ package com.assignpro.backend.dto;
 public class UserResponse {
 
     private Long id;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("name")
     private String fullName;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("phone")
     private String mobile;
     private String email;
     private String role;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("isActive")
     private Boolean enabled;
+
     private long assignedLeads;
 
     public UserResponse() {
     }
 
     public UserResponse(Long id, String fullName, String mobile,
-                        String email, String role,
-                        Boolean enabled, long assignedLeads) {
+            String email, String role,
+            Boolean enabled, long assignedLeads) {
 
         this.id = id;
         this.fullName = fullName;

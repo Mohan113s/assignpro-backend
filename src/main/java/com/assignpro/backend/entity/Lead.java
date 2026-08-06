@@ -15,7 +15,7 @@ public class Lead {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String mobile;
 
     private String email;
@@ -39,6 +39,9 @@ public class Lead {
 
     @Column(length = 1000)
     private String notes;
+
+    @OneToMany(mappedBy = "lead", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<LeadNote> leadNotes = new java.util.ArrayList<>();
 
     private LocalDateTime createdAt;
 
@@ -156,5 +159,13 @@ public class Lead {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public java.util.List<LeadNote> getLeadNotes() {
+        return leadNotes;
+    }
+
+    public void setLeadNotes(java.util.List<LeadNote> leadNotes) {
+        this.leadNotes = leadNotes;
     }
 }

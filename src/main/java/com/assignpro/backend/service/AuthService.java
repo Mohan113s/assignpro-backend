@@ -22,17 +22,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final EmailService emailService;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
-            JwtService jwtService) {
+            JwtService jwtService,
+            EmailService emailService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.emailService = emailService;
     }
 
     // ==========================
@@ -70,13 +73,67 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(role);
         user.setEnabled(true);
+        user.setIsVerified(false);
+        user.setVerificationToken(java.util.UUID.randomUUID().toString());
 
         userRepository.save(user);
+
+        // Send verification email
+        try {
+            emailService.sendVerificationEmail(user.getEmail(), user.getVerificationToken());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AuthResponse(null, role.name(),
+                    "Registration successful, but failed to send verification email.");
+        }
 
         return new AuthResponse(
                 null,
                 role.name(),
-                "Registration Successful");
+                "Registration Successful. Please check your email to verify your account.");
+    }
+
+    // ==========================
+    // VERIFY EMAIL
+    // ==========================
+    public String verifyEmail(String token) {
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid verification token"));
+
+        user.setIsVerified(true);
+        user.setVerificationToken(null);
+        userRepository.save(user);
+
+        return "Email verified successfully! You can now login.";
+    }
+
+    // ==========================
+    // FORGOT PASSWORD
+    // ==========================
+    public String forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setResetToken(java.util.UUID.randomUUID().toString());
+        userRepository.save(user);
+
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getResetToken());
+
+        return "Password reset email sent";
+    }
+
+    // ==========================
+    // RESET PASSWORD
+    // ==========================
+    public String resetPassword(String token, String newPassword) {
+        User user = userRepository.findByResetToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid reset token"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetToken(null);
+        userRepository.save(user);
+
+        return "Password reset successfully";
     }
 
     // ==========================
@@ -84,20 +141,50 @@ public class AuthService {
     // ==========================
     public AuthResponse login(LoginRequest request) {
 
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Bypass verification since it's just mock at the moment
+        // if (!user.getIsVerified()) {
+        // throw new RuntimeException("Please verify your email before logging in.");
+        // }
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()));
-
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
 
         String token = jwtService.generateToken(user.getEmail());
 
         return new AuthResponse(
                 token,
                 user.getRole().name(),
-                "Login Successful");
+                "Login Successful",
+                new com.assignpro.backend.dto.UserResponse(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getMobile(),
+                        user.getEmail(),
+                        user.getRole().name(),
+                        user.getEnabled(),
+                        0));
+    }
+
+    public String getEmailFromToken(String token) {
+        return jwtService.extractUsername(token);
+    }
+
+    public com.assignpro.backend.dto.UserResponse getUserProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return new com.assignpro.backend.dto.UserResponse(
+                user.getId(),
+                user.getFullName(),
+                user.getMobile(),
+                user.getEmail(),
+                user.getRole().name(),
+                user.getEnabled(),
+                0);
     }
 
 }

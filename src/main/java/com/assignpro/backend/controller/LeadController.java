@@ -62,10 +62,17 @@ public class LeadController {
     // ==========================
     @DeleteMapping("/{id:\\d+}")
     public ResponseEntity<String> deleteLead(@PathVariable Long id) {
-
         leadService.deleteLead(id);
-
         return ResponseEntity.ok("Lead Deleted Successfully");
+    }
+
+    // ==========================
+    // DELETE ALL LEADS
+    // ==========================
+    @DeleteMapping("/all")
+    public ResponseEntity<String> deleteAllLeads() {
+        leadService.deleteAllLeads();
+        return ResponseEntity.ok("All Leads Deleted Successfully");
     }
 
     // ==========================
@@ -90,61 +97,61 @@ public class LeadController {
         return ResponseEntity.ok(
                 leadService.bulkAssignLeads(request));
     }
-    
- // ==========================
- // SEARCH BY NAME
- // ==========================
- @GetMapping("/search/name")
- public ResponseEntity<List<Lead>> searchByName(
-         @RequestParam String name) {
 
-     return ResponseEntity.ok(
-             leadService.searchByName(name));
- }
+    // ==========================
+    // SEARCH BY NAME
+    // ==========================
+    @GetMapping("/search/name")
+    public ResponseEntity<List<Lead>> searchByName(
+            @RequestParam String name) {
 
- // ==========================
- // SEARCH BY MOBILE
- // ==========================
- @GetMapping("/search/mobile")
- public ResponseEntity<List<Lead>> searchByMobile(
-         @RequestParam String mobile) {
+        return ResponseEntity.ok(
+                leadService.searchByName(name));
+    }
 
-     return ResponseEntity.ok(
-             leadService.searchByMobile(mobile));
- }
+    // ==========================
+    // SEARCH BY MOBILE
+    // ==========================
+    @GetMapping("/search/mobile")
+    public ResponseEntity<List<Lead>> searchByMobile(
+            @RequestParam String mobile) {
 
- // ==========================
- // SEARCH BY COMPANY
- // ==========================
- @GetMapping("/search/company")
- public ResponseEntity<List<Lead>> searchByCompany(
-         @RequestParam String company) {
+        return ResponseEntity.ok(
+                leadService.searchByMobile(mobile));
+    }
 
-     return ResponseEntity.ok(
-             leadService.searchByCompany(company));
- }
+    // ==========================
+    // SEARCH BY COMPANY
+    // ==========================
+    @GetMapping("/search/company")
+    public ResponseEntity<List<Lead>> searchByCompany(
+            @RequestParam String company) {
 
- // ==========================
- // SEARCH BY CITY
- // ==========================
- @GetMapping("/search/city")
- public ResponseEntity<List<Lead>> searchByCity(
-         @RequestParam String city) {
+        return ResponseEntity.ok(
+                leadService.searchByCompany(company));
+    }
 
-     return ResponseEntity.ok(
-             leadService.searchByCity(city));
- }
+    // ==========================
+    // SEARCH BY CITY
+    // ==========================
+    @GetMapping("/search/city")
+    public ResponseEntity<List<Lead>> searchByCity(
+            @RequestParam String city) {
 
- // ==========================
- // FILTER BY STATUS
- // ==========================
- @GetMapping("/status")
- public ResponseEntity<List<Lead>> getLeadsByStatus(
-         @RequestParam LeadStatus status) {
+        return ResponseEntity.ok(
+                leadService.searchByCity(city));
+    }
 
-     return ResponseEntity.ok(
-             leadService.getLeadsByStatus(status));
- }
+    // ==========================
+    // FILTER BY STATUS
+    // ==========================
+    @GetMapping("/status")
+    public ResponseEntity<List<Lead>> getLeadsByStatus(
+            @RequestParam LeadStatus status) {
+
+        return ResponseEntity.ok(
+                leadService.getLeadsByStatus(status));
+    }
 
     // ==========================
     // MANUAL LEAD DISTRIBUTION

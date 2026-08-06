@@ -40,10 +40,44 @@ public class AuthController {
     }
 
     // ==========================
+    // GET ME
+    // ==========================
+    @GetMapping("/me")
+    public ResponseEntity<com.assignpro.backend.dto.UserResponse> getMe(@RequestHeader("Authorization") String token) {
+        // Just extract email from token and load user
+        String email = authService.getEmailFromToken(token.substring(7));
+        return ResponseEntity.ok(authService.getUserProfile(email));
+    }
+
+    // ==========================
     // TEST API
     // ==========================
     @GetMapping("/test")
     public String test() {
         return "AssignPro Backend Running Successfully";
+    }
+
+    // ==========================
+    // VERIFY EMAIL
+    // ==========================
+    @GetMapping("/verify")
+    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
+        return ResponseEntity.ok(authService.verifyEmail(token));
+    }
+
+    // ==========================
+    // FORGOT PASSWORD
+    // ==========================
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+        return ResponseEntity.ok(authService.forgotPassword(email));
+    }
+
+    // ==========================
+    // RESET PASSWORD
+    // ==========================
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+        return ResponseEntity.ok(authService.resetPassword(token, newPassword));
     }
 }

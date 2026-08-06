@@ -31,6 +31,12 @@ public class User {
     @Column(nullable = false)
     private Boolean enabled = true;
 
+    @Column(nullable = false)
+    private Boolean isVerified = false;
+
+    private String verificationToken;
+    private String resetToken;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -111,5 +117,29 @@ public class User {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Boolean getIsVerified() {
+        return isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+
+    public String getVerificationToken() {
+        return verificationToken;
+    }
+
+    public void setVerificationToken(String verificationToken) {
+        this.verificationToken = verificationToken;
+    }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
     }
 }
