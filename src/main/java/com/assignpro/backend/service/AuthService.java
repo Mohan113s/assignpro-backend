@@ -3,6 +3,8 @@ package com.assignpro.backend.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -63,16 +65,21 @@ public class AuthService {
     // ==========================
     public AuthResponse register(RegisterRequest request) {
 
+        // Normalize email: trim + lowercase for reliable lookup
+        String normalizedEmail = request.getEmail() != null
+                ? request.getEmail().trim().toLowerCase()
+                : "";
+
         // Validate duplicate email
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             AuthResponse error = new AuthResponse();
             error.setMessage("Email already exists. Please use a different email or sign in.");
             return error;
         }
 
         // Validate duplicate mobile
-        if (request.getMobile() != null && !request.getMobile().isBlank()
-                && userRepository.existsByMobile(request.getMobile())) {
+        String mobile = request.getMobile() != null ? request.getMobile().trim() : "";
+        if (!mobile.isBlank() && userRepository.existsByMobile(mobile)) {
             AuthResponse error = new AuthResponse();
             error.setMessage("Mobile number already registered.");
             return error;
@@ -93,9 +100,9 @@ public class AuthService {
 
         // Create and save user to AWS PostgreSQL
         User user = new User();
-        user.setFullName(request.getFullName());
-        user.setMobile(request.getMobile() != null ? request.getMobile() : "");
-        user.setEmail(request.getEmail());
+        user.setFullName(request.getFullName() != null ? request.getFullName().trim() : "");
+        user.setMobile(mobile);
+        user.setEmail(normalizedEmail); // Always store lowercase email
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(role);
         user.setEnabled(true);
@@ -140,7 +147,8 @@ public class AuthService {
     // FORGOT PASSWORD
     // ==========================
     public String forgotPassword(String email) {
-        User user = userRepository.findByEmail(email)
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("No account found with that email"));
 
         user.setResetToken(java.util.UUID.randomUUID().toString());
@@ -175,17 +183,47 @@ public class AuthService {
     // ==========================
     public AuthResponse login(LoginRequest request) {
 
-        // Spring Security validates credentials against AWS PostgreSQL via
-        // CustomUserDetailsService
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()));
+        // Normalize email: trim + lowercase for reliable lookup
+        String normalizedEmail = request.getEmail() != null
+                ? request.getEmail().trim().toLowerCase()
+                : "";
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        try {
+            // Spring Security validates credentials against AWS PostgreSQL via
+            // CustomUserDetailsService
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            normalizedEmail,
+                            request.getPassword()));
+        } catch (BadCredentialsException e) {
+            log.warn("Login failed — bad credentials for: {}", normalizedEmail);
+            AuthResponse error = new AuthResponse();
+            error.setMessage("Invalid email or password. Please try again.");
+            return error;
+        } catch (DisabledException e) {
+            log.warn("Login failed — account disabled: {}", normalizedEmail);
+            AuthResponse error = new AuthResponse();
+            error.setMessage("Your account has been disabled. Contact admin.");
+            return error;
+        } catch (Exception e) {
+            log.error("Login failed — unexpected error for {}: {}", normalizedEmail, e.getMessage());
+            AuthResponse error = new AuthResponse();
+            error.setMessage("Login failed. Please check your credentials and try again.");
+            return error;
+        }
+
+        User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+                .orElse(null);
+
+        if (user == null) {
+            AuthResponse error = new AuthResponse();
+            error.setMessage("User not found. Please register first.");
+            return error;
+        }
 
         String token = jwtService.generateToken(user.getEmail());
+
+        log.info("Login successful: {} ({})", user.getEmail(), user.getRole().name());
 
         return new AuthResponse(
                 token,
@@ -202,7 +240,8 @@ public class AuthService {
     }
 
     public UserResponse getUserProfile(String email) {
-        User user = userRepository.findByEmail(email)
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return toUserResponse(user);
     }

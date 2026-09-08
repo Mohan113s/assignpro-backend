@@ -10,7 +10,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    // Case-insensitive email lookup — critical for PostgreSQL
+    // PostgreSQL WHERE email = ? is case-sensitive; this generates LOWER(email) =
+    // LOWER(?)
+    Optional<User> findByEmailIgnoreCase(String email);
+
     boolean existsByEmail(String email);
+
+    // Case-insensitive existence check
+    boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByMobile(String mobile);
 

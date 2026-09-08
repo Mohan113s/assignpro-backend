@@ -24,9 +24,12 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found"));
+        // Normalize email for case-insensitive lookup
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+
+        User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User not found: " + normalizedEmail));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
@@ -35,7 +38,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 true,
                 true,
                 true,
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
     }
 }

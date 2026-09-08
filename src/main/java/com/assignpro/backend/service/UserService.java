@@ -45,7 +45,7 @@ public class UserService {
     }
 
     public com.assignpro.backend.entity.User createUser(com.assignpro.backend.dto.UserRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
         if (request.getPhone() != null && !request.getPhone().isEmpty()
@@ -75,7 +75,8 @@ public class UserService {
         com.assignpro.backend.entity.User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!user.getEmail().equalsIgnoreCase(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
+        if (!user.getEmail().equalsIgnoreCase(request.getEmail())
+                && userRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
         if (request.getPhone() != null && !request.getPhone().isEmpty() &&
