@@ -83,6 +83,19 @@ public class LeadService {
     }
 
     // ==========================
+    // UNASSIGN LEAD
+    // ==========================
+    public Lead unassignLead(Long leadId) {
+
+        Lead lead = getLeadById(leadId);
+
+        lead.setAssignedUser(null);
+        lead.setStatus(LeadStatus.PENDING);
+
+        return leadRepository.save(lead);
+    }
+
+    // ==========================
     // GET USER LEADS
     // ==========================
     public List<Lead> getMyLeads(Long userId) {
@@ -217,24 +230,31 @@ public class LeadService {
     // IMPORT EXCEL/CSV
     // ==========================
     public LeadImportResponse importExcel(MultipartFile file) {
-
         if (!ExcelHelper.hasValidFormat(file)) {
-            return new LeadImportResponse(
-                    0, 0, 0,
-                    "Please upload a valid CSV, XLS, or XLSX file");
+            return new LeadImportResponse(0, 0, 0, 0, 0, "Please upload a valid CSV, XLS, or XLSX file");
         }
 
         try {
             List<Lead> leads = ExcelHelper.fileToLeads(file);
-
             int total = leads.size();
             int imported = 0;
-            int skipped = 0;
+            int duplicates = 0;
+            int invalid = 0;
 
             for (Lead lead : leads) {
+                // Validate required fields explicitly
+                String name = lead.getName() != null ? lead.getName().trim() : "";
+                String mobile = lead.getMobile() != null ? lead.getMobile().trim() : "";
+
+                if (name.isEmpty() || name.equalsIgnoreCase("Unknown")
+                        || mobile.isEmpty() || mobile.equalsIgnoreCase("N/A") || mobile.length() < 5) {
+                    invalid++;
+                    continue;
+                }
+
                 // Duplicate Mobile Validation
-                if (lead.getMobile() != null && leadRepository.existsByMobile(lead.getMobile())) {
-                    skipped++;
+                if (leadRepository.existsByMobile(mobile)) {
+                    duplicates++;
                     continue;
                 }
 
@@ -245,11 +265,12 @@ public class LeadService {
             return new LeadImportResponse(
                     total,
                     imported,
-                    skipped,
-                    "File Imported Successfully");
-
+                    duplicates,
+                    0, // failed (crashes etc)
+                    invalid,
+                    "File processing complete.");
         } catch (Exception e) {
-            throw new RuntimeException("Could not import file", e);
+            throw new RuntimeException("Could not import file: " + e.getMessage(), e);
         }
     }
 }

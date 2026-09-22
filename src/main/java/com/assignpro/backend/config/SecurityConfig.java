@@ -39,97 +39,111 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
+        public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+                this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
+        @Bean
+        public AuthenticationManager authenticationManager(
+                        AuthenticationConfiguration configuration) throws Exception {
+                return configuration.getAuthenticationManager();
+        }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        @Bean
+        public org.springframework.security.authentication.dao.DaoAuthenticationProvider authenticationProvider(
+                        com.assignpro.backend.security.CustomUserDetailsService customUserDetailsService,
+                        PasswordEncoder passwordEncoder) {
+                org.springframework.security.authentication.dao.DaoAuthenticationProvider provider = new org.springframework.security.authentication.dao.DaoAuthenticationProvider();
+                provider.setUserDetailsService(customUserDetailsService);
+                provider.setPasswordEncoder(passwordEncoder);
+                return provider;
+        }
 
-        http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // Disable CSRF — REST API with JWT, no cookies
-                .csrf(csrf -> csrf.disable())
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                        org.springframework.security.authentication.dao.DaoAuthenticationProvider authenticationProvider)
+                        throws Exception {
 
-                // Stateless JWT authentication — no sessions
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                // Disable CSRF — REST API with JWT, no cookies
+                                .csrf(csrf -> csrf.disable())
+                                .authenticationProvider(authenticationProvider)
 
-                .authorizeHttpRequests(auth -> auth
+                                // Stateless JWT authentication — no sessions
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                        // ── Public endpoints (no JWT needed) ──
-                        .requestMatchers(
-                                "/",
-                                "/api/auth/login",
-                                "/api/auth/register",
-                                "/api/auth/verify",
-                                "/api/auth/forgot-password",
-                                "/api/auth/reset-password",
-                                "/api/auth/test",
-                                "/error")
-                        .permitAll()
+                                .authorizeHttpRequests(auth -> auth
 
-                        // ── CORS preflight ──
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                                                // ── Public endpoints (no JWT needed) ──
+                                                .requestMatchers(
+                                                                "/",
+                                                                "/api/auth/login",
+                                                                "/api/auth/register",
+                                                                "/api/auth/verify",
+                                                                "/api/auth/forgot-password",
+                                                                "/api/auth/reset-password",
+                                                                "/api/auth/test",
+                                                                "/error")
+                                                .permitAll()
 
-                        // ── Swagger (if added later) ──
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**")
-                        .permitAll()
+                                                // ── CORS preflight ──
+                                                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
+                                                .permitAll()
 
-                        // ── All other APIs require JWT ──
-                        .anyRequest().authenticated())
+                                                // ── Swagger (if added later) ──
+                                                .requestMatchers(
+                                                                "/swagger-ui/**",
+                                                                "/v3/api-docs/**")
+                                                .permitAll()
 
-                // JWT filter runs before Spring Security's username/password filter
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                                                // ── All other APIs require JWT ──
+                                                .anyRequest().authenticated())
 
-        return http.build();
-    }
+                                // JWT filter runs before Spring Security's username/password filter
+                                .addFilterBefore(
+                                                jwtAuthenticationFilter,
+                                                UsernamePasswordAuthenticationFilter.class);
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+                return http.build();
+        }
 
-        // Allow GitHub Pages, Render, and local development
-        configuration.setAllowedOriginPatterns(List.of(
-                "https://*.github.io", // GitHub Pages (all repos)
-                "https://assignpro-backend.onrender.com",
-                "http://localhost:*", // Local Flutter development
-                "http://127.0.0.1:*" // Local Flutter development
-        ));
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                // Allow GitHub Pages, Render, and local development
+                configuration.setAllowedOriginPatterns(List.of(
+                                "https://*.github.io", // GitHub Pages (all repos)
+                                "https://assignpro-backend.onrender.com",
+                                "http://localhost:*", // Local Flutter development
+                                "http://127.0.0.1:*" // Local Flutter development
+                ));
 
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "X-Requested-With",
-                "Origin"));
+                configuration.setAllowedMethods(Arrays.asList(
+                                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
-        configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(false);
-        configuration.setMaxAge(3600L);
+                configuration.setAllowedHeaders(Arrays.asList(
+                                "Authorization",
+                                "Content-Type",
+                                "Accept",
+                                "X-Requested-With",
+                                "Origin"));
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+                configuration.setExposedHeaders(List.of("Authorization"));
+                configuration.setAllowCredentials(false);
+                configuration.setMaxAge(3600L);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
 }

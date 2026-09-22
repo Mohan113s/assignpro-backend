@@ -37,6 +37,7 @@ public class LeadController {
     // GET ALL LEADS
     // ==========================
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Lead>> getAllLeads() {
         return ResponseEntity.ok(leadService.getAllLeads());
     }
@@ -45,6 +46,7 @@ public class LeadController {
     // GET UNASSIGNED LEADS
     // ==========================
     @GetMapping("/unassigned")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Lead>> getUnassignedLeads() {
         return ResponseEntity.ok(leadService.getUnassignedLeads());
     }
@@ -70,6 +72,7 @@ public class LeadController {
     // DELETE ALL LEADS
     // ==========================
     @DeleteMapping("/all")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteAllLeads() {
         leadService.deleteAllLeads();
         return ResponseEntity.ok("All Leads Deleted Successfully");
@@ -79,6 +82,7 @@ public class LeadController {
     // ASSIGN SINGLE LEAD
     // ==========================
     @PutMapping("/{leadId:\\d+}/assign/{userId:\\d+}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Lead> assignLead(
             @PathVariable Long leadId,
             @PathVariable Long userId) {
@@ -88,9 +92,22 @@ public class LeadController {
     }
 
     // ==========================
+    // UNASSIGN LEAD
+    // ==========================
+    @PutMapping("/{leadId:\\d+}/unassign")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Lead> unassignLead(
+            @PathVariable Long leadId) {
+
+        return ResponseEntity.ok(
+                leadService.unassignLead(leadId));
+    }
+
+    // ==========================
     // BULK ASSIGN LEADS
     // ==========================
     @PutMapping("/assign-bulk")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> bulkAssignLeads(
             @RequestBody BulkAssignRequest request) {
 
@@ -168,6 +185,7 @@ public class LeadController {
     // GET USER LEADS (ADMIN)
     // ==========================
     @GetMapping("/user/{userId:\\d+}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Lead>> getUserLeads(
             @PathVariable Long userId) {
 
@@ -214,6 +232,7 @@ public class LeadController {
     // IMPORT EXCEL
     // ==========================
     @PostMapping("/import")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LeadImportResponse> importExcel(
             @RequestParam("file") MultipartFile file) {
 

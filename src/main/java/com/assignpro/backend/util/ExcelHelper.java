@@ -55,11 +55,22 @@ public class ExcelHelper {
             for (int i = 1; i < records.size(); i++) { // Skip header
                 String[] record = records.get(i);
 
+                // Skip completely empty rows
+                if (record.length == 0)
+                    continue;
+
+                String name = record.length > 0 ? record[0].trim() : "";
+                String mobile = record.length > 1 ? record[1].trim() : "";
+
+                // Do not skip empty rows here, let LeadService validate them
+                if (name.isEmpty())
+                    name = "";
+                if (mobile.isEmpty())
+                    mobile = "";
+
                 Lead lead = new Lead();
-                if (record.length > 0)
-                    lead.setName(record[0].trim());
-                if (record.length > 1)
-                    lead.setMobile(record[1].trim());
+                lead.setName(name);
+                lead.setMobile(mobile);
                 if (record.length > 2)
                     lead.setEmail(record[2].trim());
                 if (record.length > 3)
@@ -73,7 +84,7 @@ public class ExcelHelper {
                 if (record.length > 7)
                     lead.setSource(record[7].trim());
 
-                lead.setStatus(LeadStatus.NEW);
+                lead.setStatus(LeadStatus.PENDING);
                 leads.add(lead);
             }
             return leads;
@@ -130,7 +141,15 @@ public class ExcelHelper {
                     }
                 }
 
-                lead.setStatus(LeadStatus.NEW);
+                String nameVal = lead.getName() != null ? lead.getName().trim() : "";
+                String mobileVal = lead.getMobile() != null ? lead.getMobile().trim() : "";
+                // Do not skip empty rows here, let LeadService validate them
+                if (nameVal.isEmpty())
+                    lead.setName("");
+                if (mobileVal.isEmpty())
+                    lead.setMobile("");
+
+                lead.setStatus(LeadStatus.PENDING);
                 leads.add(lead);
             }
             workbook.close();
