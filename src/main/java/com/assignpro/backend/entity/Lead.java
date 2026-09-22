@@ -2,6 +2,9 @@ package com.assignpro.backend.entity;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -31,16 +34,28 @@ public class Lead {
     private String source;
 
     @Enumerated(EnumType.STRING)
-    private LeadStatus status = LeadStatus.NEW;
+    private LeadStatus status = LeadStatus.PENDING;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "assigned_to")
+    @JsonIgnore
     private User assignedUser;
+
+    @JsonProperty("assignedUserId")
+    public Long getAssignedUserId() {
+        return assignedUser != null ? assignedUser.getId() : null;
+    }
+
+    @JsonProperty("assignedUserName")
+    public String getAssignedUserName() {
+        return assignedUser != null ? assignedUser.getFullName() : null;
+    }
 
     @Column(length = 1000)
     private String notes;
 
     @OneToMany(mappedBy = "lead", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private java.util.List<LeadNote> leadNotes = new java.util.ArrayList<>();
 
     private LocalDateTime createdAt;
